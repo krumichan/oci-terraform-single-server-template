@@ -1,0 +1,15 @@
+# Terraform runtime files
+.terraform/
+*.tfstate
+*.tfstate.*
+crash.log
+crash.*.log
+
+# Account-specific values and plans
+terraform.tfvars
+*.tfvars.json
+*.tfplan
+
+# Private keys
+*.pem
+*.key
