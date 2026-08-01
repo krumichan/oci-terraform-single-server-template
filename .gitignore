@@ -6,7 +6,7 @@ crash.log
 crash.*.log
 
 # Account-specific values and plans
-terraform.tfvars
+#terraform.tfvars
 *.tfvars.json
 *.tfplan
 
