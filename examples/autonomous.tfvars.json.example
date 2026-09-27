@@ -1,0 +1,30 @@
+{
+  "tenancy_ocid": "ocid1.tenancy.oc1..REPLACE_ME",
+  "compartment_ocid": "ocid1.compartment.oc1..REPLACE_ME",
+  "oci_profile": "TRANSLACAT",
+  "region": "REPLACE_WITH_HOME_REGION",
+  "home_region": "REPLACE_WITH_HOME_REGION",
+  "project_name": "oracle-option",
+  "free_tier_only": true,
+  "ssh_public_key_path": "C:/Users/YOUR_USER/.ssh/translacat_oci.pub",
+  "ssh_allowed_cidr": "203.0.113.10/32",
+  "servers": {
+    "server-1": {
+      "availability_domain": "REPLACE_WITH_FULL_AD_NAME",
+      "image_ocid": "ocid1.image.oc1.REPLACE_WITH_FIXED_UBUNTU_IMAGE",
+      "private_ip": "10.0.1.10",
+      "role": "Oracle 엔진 옵션 예시",
+      "boot_volume_size_in_gbs": 50,
+      "public_https": false
+    }
+  },
+  "internal_tcp_rules": {},
+  "mysql_enabled": false,
+  "autonomous_databases": {
+    "analytics": {
+      "db_name": "catdata",
+      "db_workload": "DW",
+      "whitelisted_ips": ["203.0.113.10/32"]
+    }
+  }
+}

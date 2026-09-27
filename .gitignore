@@ -6,10 +6,23 @@ crash.log
 crash.*.log
 
 # Account-specific values and plans
-#terraform.tfvars
+*.tfvars
 *.tfvars.json
+*.auto.tfvars
+*.auto.tfvars.json
 *.tfplan
+tfplan
+.plans/
+.local/
+*.plan.json
+.env
+.env.*
+!*.example
+OCI_INPUTS.private.md
+*.credentials
 
 # Private keys
 *.pem
 *.key
+id_rsa
+id_ed25519

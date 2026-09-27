@@ -1,0 +1,112 @@
+#!/bin/bash
+set -euo pipefail
+exec > >(tee -a /var/log/oci-free-bootstrap.log) 2>&1
+trap 'echo "Bootstrap failed at line $LINENO. Inspect cloud-init status and this log."' ERR
+
+# Only fresh, pinned Canonical Ubuntu AMD images are supported. Never upgrade or
+# uninstall a pre-existing Docker runtime or erase its data as a fallback.
+. /etc/os-release
+[[ "$ID" == ubuntu && ( "$VERSION_ID" == 22.04 || "$VERSION_ID" == 24.04 ) ]]
+[[ "$(dpkg --print-architecture)" == amd64 ]]
+if command -v docker >/dev/null 2>&1 || [[ -e /etc/docker/daemon.json ]]; then
+  echo 'Existing Docker configuration detected; manual review required.'
+  exit 1
+fi
+
+retry() {
+  local attempt
+  for attempt in 1 2 3; do
+    if "$@"; then return 0; fi
+    if [[ "$attempt" != 3 ]]; then sleep "$((attempt * 10))"; fi
+  done
+  return 1
+}
+export DEBIAN_FRONTEND=noninteractive
+retry apt-get -o DPkg::Lock::Timeout=120 update
+retry apt-get -o DPkg::Lock::Timeout=120 install -y ca-certificates curl iptables
+install -m 0755 -d /etc/apt/keyrings /etc/docker /etc/systemd/system/docker.service.d
+curl --fail --silent --show-error --location --retry 2 --connect-timeout 15 \
+  https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod 0644 /etc/apt/keyrings/docker.asc
+cat >/etc/apt/sources.list.d/docker.sources <<EOF
+Types: deb
+URIs: https://download.docker.com/linux/ubuntu
+Suites: $VERSION_CODENAME
+Components: stable
+Architectures: amd64
+Signed-By: /etc/apt/keyrings/docker.asc
+EOF
+retry apt-get -o DPkg::Lock::Timeout=120 update
+cat >/etc/docker/daemon.json <<'JSON'
+{"log-driver":"json-file","log-opts":{"max-size":"10m","max-file":"3"},"live-restore":true}
+JSON
+retry apt-get -o DPkg::Lock::Timeout=120 install -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin
+
+# Manage only our own chains. Preserve the image's OCI metadata/iSCSI rules and
+# every unrelated INPUT/FORWARD rule. Docker published ports also need a guard.
+cat >/usr/local/sbin/oci-free-firewall <<'FIREWALL'
+#!/bin/bash
+set -euo pipefail
+extif=$(ip -4 route show default | awk 'NR==1 {print $5}')
+[[ -n "$extif" ]]
+ensure_chain() {
+  if ! iptables -w -nL "$1" >/dev/null 2>&1; then iptables -w -N "$1"; fi
+}
+ensure_chain OCI-FREE-INPUT
+ensure_chain OCI-FREE-DOCKER
+ensure_chain DOCKER-USER
+# These are exclusively owned chains; never flush INPUT, FORWARD or OCI rules.
+iptables -w -F OCI-FREE-INPUT
+iptables -w -F OCI-FREE-DOCKER
+iptables -w -A OCI-FREE-INPUT -m conntrack --ctstate ESTABLISHED,RELATED -j ACCEPT
+iptables -w -A OCI-FREE-INPUT -i lo -j ACCEPT
+iptables -w -A OCI-FREE-INPUT -p tcp -s '${ssh_cidr}' --dport 22 -j ACCEPT
+iptables -w -A OCI-FREE-INPUT -p icmp --icmp-type fragmentation-needed -j ACCEPT
+%{ if public_https ~}
+iptables -w -A OCI-FREE-INPUT -p tcp --dport 443 -j ACCEPT
+%{ endif ~}
+%{ for rule in internal_rules ~}
+iptables -w -A OCI-FREE-INPUT -p tcp -s '${rule.source}/32' --dport '${rule.port}' -j ACCEPT
+%{ endfor ~}
+iptables -w -A OCI-FREE-INPUT -i "$extif" -j DROP
+iptables -w -A OCI-FREE-INPUT -j RETURN
+iptables -w -C INPUT -j OCI-FREE-INPUT 2>/dev/null || iptables -w -I INPUT 1 -j OCI-FREE-INPUT
+
+iptables -w -A OCI-FREE-DOCKER -m conntrack --ctstate ESTABLISHED,RELATED -j RETURN
+# Match the original published host port, before Docker's destination NAT.
+%{ if public_https ~}
+iptables -w -A OCI-FREE-DOCKER -i "$extif" -p tcp -m conntrack --ctorigdstport 443 -j RETURN
+%{ endif ~}
+%{ for rule in internal_rules ~}
+iptables -w -A OCI-FREE-DOCKER -i "$extif" -p tcp -s '${rule.source}/32' -m conntrack --ctorigdstport '${rule.port}' -j RETURN
+%{ endfor ~}
+iptables -w -A OCI-FREE-DOCKER -i "$extif" -j DROP
+iptables -w -A OCI-FREE-DOCKER -j RETURN
+iptables -w -C DOCKER-USER -j OCI-FREE-DOCKER 2>/dev/null || iptables -w -I DOCKER-USER 1 -j OCI-FREE-DOCKER
+FIREWALL
+chmod 0755 /usr/local/sbin/oci-free-firewall
+cat >/etc/systemd/system/oci-free-firewall.service <<'UNIT'
+[Unit]
+Description=OCI free template host and Docker ingress rules
+After=network-online.target docker.service
+Wants=network-online.target
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/oci-free-firewall
+RemainAfterExit=yes
+[Install]
+WantedBy=multi-user.target
+UNIT
+cat >/etc/systemd/system/docker.service.d/oci-free-firewall.conf <<'UNIT'
+[Service]
+ExecStartPost=/usr/local/sbin/oci-free-firewall
+UNIT
+systemctl daemon-reload
+systemctl enable --now docker
+systemctl enable --now oci-free-firewall.service
+# Docker group membership is root-equivalent; use sudo explicitly by default.
+docker version --format '{{.Server.Version}}'
+docker compose version
+install -m 0755 -d /var/lib/oci-free-template
+date --utc --iso-8601=seconds >/var/lib/oci-free-template/bootstrap-complete
+echo 'Bootstrap completed. Reconnect using SSH and verify Docker/Compose.'

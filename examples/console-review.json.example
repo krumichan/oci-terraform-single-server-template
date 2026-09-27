@@ -1,0 +1,33 @@
+{
+  "reviewed_on": "REPLACE_WITH_TODAY_YYYY-MM-DD",
+  "tenancy_ocid": "ocid1.tenancy.oc1..REPLACE_ME",
+  "region": "REPLACE_WITH_HOME_REGION",
+  "account_status": "REPLACE_WITH_CONSOLE_ACCOUNT_STATUS",
+  "official_policy_confirmed": false,
+  "policy_conflicts_resolved": false,
+  "tenancy_wide_inspect_confirmed": false,
+  "always_free_compute_confirmed": false,
+  "always_free_mysql_confirmed": false,
+  "mysql_backup_policy_confirmed": false,
+  "always_free_autonomous_confirmed": false,
+  "limits_quotas_reviewed": false,
+  "mysql_nsg_iam": {
+    "reviewed_on": "REPLACE_WITH_TODAY_YYYY-MM-DD",
+    "tenancy_ocid": "ocid1.tenancy.oc1..REPLACE_ME",
+    "region": "REPLACE_WITH_HOME_REGION",
+    "db_compartment_ocid": "ocid1.compartment.oc1..REPLACE_ME",
+    "nsg_compartment_ocid": "ocid1.compartment.oc1..REPLACE_ME",
+    "subnet_compartment_ocid": "ocid1.compartment.oc1..REPLACE_ME",
+    "deployer_group_ocid": "ocid1.group.oc1..REPLACE_ME",
+    "policy_disposition": "UNREVIEWED",
+    "policy_ocids": [],
+    "api_user_group_membership_confirmed": false,
+    "user_permissions_confirmed": false,
+    "db_principal_permissions_confirmed": false,
+    "conditions_and_scope_confirmed": false,
+    "conflicts_resolved": false,
+    "separately_approved_change_confirmed": false,
+    "unresolved_items": ["실행일 대상/그룹/사용자 권한과 DB resource principal 정책을 직접 검토하세요."]
+  },
+  "notes": "콘솔과 공식 문서를 오늘 직접 확인한 항목만 true. Trial 크레딧/높은 quota는 Always Free 증거가 아닙니다."
+}

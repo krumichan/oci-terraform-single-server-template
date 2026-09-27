@@ -1,0 +1,14 @@
+{
+  "databases": [
+    {
+      "name": "translacat_ll",
+      "username": "translacat_ll_app",
+      "host": "%"
+    },
+    {
+      "name": "translacat_chat",
+      "username": "translacat_chat_app",
+      "host": "%"
+    }
+  ]
+}

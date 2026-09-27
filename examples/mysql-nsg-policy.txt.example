@@ -1,0 +1,24 @@
+# MySQL NSG 연결 검토용 IAM 예제. 이 파일은 실행되지 않습니다.
+# 공식 문서 확인: 2026-09-27. 실행일 다시 확인:
+# https://docs.oracle.com/en-us/iaas/mysql-database/doc/mandatory-policies-permissions.html
+# https://docs.oracle.com/en-us/iaas/Content/Identity/Concepts/policysyntax.htm
+#
+# 콘솔 Identity & Security > Policies 에서 tenancy(root) scope와 대상의
+# ancestor 정책을 먼저 읽습니다. 아래 권한이 이미 충족되면 중복 생성하지 않습니다.
+# 정책 생성 위치가 tenancy라도 각 statement는 지정 compartment에만 권한을 줍니다.
+# <DEPLOYER_GROUP_OCID>: API 사용자 소속 배포 그룹의 OCID (identity domain도 확인).
+# <DB_COMPARTMENT_OCID>, <NSG_COMPARTMENT_OCID>, <SUBNET_COMPARTMENT_OCID>:
+# 현재 템플릿은 모두 .local/<env>/config.json의 compartment_ocid와 같습니다.
+# 콘솔의 Advanced policy editor에는 주석/설명을 빼고 실제 치환한 Allow 문만 넣습니다.
+# 기존 정책 확인 또는 변경 대상/최종 문장 검토와 명시적 승인 후에만 사람이 생성합니다.
+# 이 예제는 MySQL/NSG 전제이며 VM/VCN 신규 생성, 전체 사용량 조회, policy 읽기
+# 등 Terraform 배포 사용자에게 필요한 나머지 권한을 대신하지 않습니다.
+# user_group 권한이 있어도 아래 2개의 DB resource principal 권한을 생략하지 않습니다.
+
+Allow group id <DEPLOYER_GROUP_OCID> to {COMPARTMENT_INSPECT} in compartment id <DB_COMPARTMENT_OCID>
+Allow group id <DEPLOYER_GROUP_OCID> to manage mysql-family in compartment id <DB_COMPARTMENT_OCID>
+Allow group id <DEPLOYER_GROUP_OCID> to {VCN_READ, SUBNET_READ, SUBNET_ATTACH, SUBNET_DETACH} in compartment id <SUBNET_COMPARTMENT_OCID>
+Allow group id <DEPLOYER_GROUP_OCID> to {NETWORK_SECURITY_GROUP_READ, NETWORK_SECURITY_GROUP_UPDATE_MEMBERS} in compartment id <NSG_COMPARTMENT_OCID>
+Allow group id <DEPLOYER_GROUP_OCID> to {VNIC_ASSOCIATE_NETWORK_SECURITY_GROUP, VNIC_DISASSOCIATE_NETWORK_SECURITY_GROUP} in compartment id <SUBNET_COMPARTMENT_OCID>
+Allow any-user to {NETWORK_SECURITY_GROUP_UPDATE_MEMBERS} in compartment id <NSG_COMPARTMENT_OCID> where all {request.principal.type='mysqldbsystem', request.resource.compartment.id='<DB_COMPARTMENT_OCID>'}
+Allow any-user to {VNIC_CREATE, VNIC_UPDATE, VNIC_ASSOCIATE_NETWORK_SECURITY_GROUP, VNIC_DISASSOCIATE_NETWORK_SECURITY_GROUP} in compartment id <SUBNET_COMPARTMENT_OCID> where all {request.principal.type='mysqldbsystem', request.resource.compartment.id='<DB_COMPARTMENT_OCID>'}

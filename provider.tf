@@ -1,7 +1,5 @@
 provider "oci" {
-  tenancy_ocid     = var.tenancy_ocid
-  user_ocid        = var.user_ocid
-  fingerprint      = var.api_key_fingerprint
-  private_key_path = pathexpand(var.api_private_key_path)
-  region           = var.region
+  config_file_profile = var.oci_profile
+  tenancy_ocid        = var.tenancy_ocid
+  region              = var.region
 }

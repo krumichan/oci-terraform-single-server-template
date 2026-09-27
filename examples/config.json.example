@@ -1,0 +1,18 @@
+{
+  "oci_profile": "TRANSLACAT",
+  "region": "REPLACE_WITH_HOME_REGION",
+  "compartment_ocid": "ocid1.compartment.oc1..REPLACE_ME",
+  "project_name": "translacat",
+  "ssh_public_key_path": "C:/Users/YOUR_USER/.ssh/translacat_oci.pub",
+  "ssh_allowed_cidr": "REPLACE_WITH_PUBLIC_IPV4/32",
+  "servers": {
+    "server-1": {"availability_domain": "REPLACE_WITH_FULL_AD_NAME", "image_ocid": "REPLACE_AFTER_DISCOVERY", "private_ip": "10.0.1.10", "role": "미정", "boot_volume_size_in_gbs": 50, "public_https": false},
+    "server-2": {"availability_domain": "REPLACE_WITH_FULL_AD_NAME", "image_ocid": "REPLACE_AFTER_DISCOVERY", "private_ip": "10.0.1.11", "role": "미정", "boot_volume_size_in_gbs": 50, "public_https": false}
+  },
+  "internal_tcp_rules": {},
+  "mysql_enabled": true,
+  "mysql_availability_domain": "REPLACE_WITH_FULL_AD_NAME",
+  "mysql_admin_username": "dbadmin",
+  "autonomous_databases": {},
+  "limit_checks": []
+}
